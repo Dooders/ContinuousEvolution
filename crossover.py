@@ -6,7 +6,9 @@ import torch.nn as nn
 
 class CrossoverStrategy(ABC):
     @abstractmethod
-    def crossover(self, parent1: nn.Module, parent2: nn.Module) -> nn.Module:
+    def crossover(
+        self, parent1: nn.Module, parent2: nn.Module, model: nn.Module, settings: dict
+    ) -> nn.Module:
         raise NotImplementedError(
             "Crossover strategy must implement the crossover method."
         )
@@ -17,8 +19,10 @@ class AverageCrossover(CrossoverStrategy):
     Crossover strategy that averages the weights of two parent networks.
     """
 
-    def crossover(self, parent1: nn.Module, parent2: nn.Module) -> nn.Module:
-        child = type(parent1)()
+    def crossover(
+        self, parent1: nn.Module, parent2: nn.Module, model: nn.Module, settings: dict
+    ) -> nn.Module:
+        child = type(parent1)(model, settings)
         for child_param, param1, param2 in zip(
             child.parameters(), parent1.parameters(), parent2.parameters()
         ):
@@ -31,8 +35,10 @@ class RandomCrossover(CrossoverStrategy):
     Crossover strategy that randomly selects weights from two parent networks.
     """
 
-    def crossover(self, parent1: nn.Module, parent2: nn.Module) -> nn.Module:
-        child = type(parent1)()
+    def crossover(
+        self, parent1: nn.Module, parent2: nn.Module, model: nn.Module, settings: dict
+    ) -> nn.Module:
+        child = type(parent1)(model, settings)
         for child_param, param1, param2 in zip(
             child.parameters(), parent1.parameters(), parent2.parameters()
         ):
@@ -47,8 +53,10 @@ class RandomPointCrossover(CrossoverStrategy):
     parent networks.
     """
 
-    def crossover(self, parent1: nn.Module, parent2: nn.Module) -> nn.Module:
-        child = type(parent1)()
+    def crossover(
+        self, parent1: nn.Module, parent2: nn.Module, model: nn.Module, settings: dict
+    ) -> nn.Module:
+        child = type(parent1)(model, settings)
         for child_param, param1, param2 in zip(
             child.parameters(), parent1.parameters(), parent2.parameters()
         ):
@@ -78,8 +86,10 @@ class RandomRangeCrossover(CrossoverStrategy):
     parent networks.
     """
 
-    def crossover(self, parent1: nn.Module, parent2: nn.Module) -> nn.Module:
-        child = type(parent1)()
+    def crossover(
+        self, parent1: nn.Module, parent2: nn.Module, model: nn.Module, settings: dict
+    ) -> nn.Module:
+        child = type(parent1)(model, settings)
         for child_param, param1, param2 in zip(
             child.parameters(), parent1.parameters(), parent2.parameters()
         ):
