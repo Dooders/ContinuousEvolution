@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from factory import ModelFactory
+from agent import Agent
 from fitness import Fitness
 
 
@@ -16,13 +16,11 @@ class ContinuousEvolution:
     ----------
     model : nn.Module
         Neural network model to evolve.
-    factory : ModelFactory
-        Factory class for creating models on the fly.
     settings : dict
         Settings to pass to the model factory.
-    population : int
+    population_size : int
         Number of networks in the population.
-    parents : int
+    parent_count : int
         Number of parents to select from the population.
     crossover_strategy : CrossoverStrategy, optional
         Crossover strategy to use, by default AverageCrossover.
@@ -31,8 +29,6 @@ class ContinuousEvolution:
 
     Attributes
     ----------
-    model_factory : ModelFactory
-        Factory class for creating models on the fly.
     model : nn.Module
         Neural network model to evolve.
     criterion : nn.Module
@@ -41,7 +37,7 @@ class ContinuousEvolution:
         Number of networks in the population.
     population : list
         List of neural networks in the population.
-    parents : int
+    parent_count : int
         Number of parents to select from the population.
     population_history : list
         List of populations at each cycle.
@@ -54,8 +50,6 @@ class ContinuousEvolution:
 
     Methods
     -------
-    initialize_population(size: int) -> list:
-        Initialize a population of neural networks.
     select_parents(population: list, fitnesses: list, num_parents: int) -> list:
         Select the best parents from the population based on fitness.
     crossover(parent1: nn.Module, parent2: nn.Module) -> nn.Module:
@@ -72,22 +66,23 @@ class ContinuousEvolution:
         self,
         model: nn.Module,
         settings: dict,
-        population: int,
-        parents: int,
+        population_size: int,
+        parent_count: int,
         crossover_strategy,
         mutation_strategy,
     ) -> None:
-        self.model_factory = ModelFactory(model, settings)
+        self.model = model
+        self.settings = settings
         self.criterion = nn.MSELoss()
-        self.population_size = population
-        self.population = self.initialize_population(population)
-        self.parents = parents
+        self.population_size = population_size
+        self.population = self._initialize_population(population_size)
+        self.parent_count = parent_count
         self.population_history = []
         self.fitness = Fitness(self.criterion)
         self.crossover_strategy = crossover_strategy
         self.mutation_strategy = mutation_strategy
 
-    def initialize_population(self, size: int) -> list:
+    def _initialize_population(self, size: int) -> list:
         """
         Initialize a population of neural networks.
 
@@ -101,10 +96,10 @@ class ContinuousEvolution:
         list
             List of SimpleSequentialNetwork instances.
         """
-        return [self.model_factory() for _ in range(size)]
+        return [Agent(self.model(**self.settings)) for _ in range(size)]
 
     def select_parents(
-        self, population: list, fitnesses: list, num_parents: int
+        self, population: list, fitnesses: list, parent_count: int
     ) -> list:
         """
         Select the best parents from the population based on fitness.
@@ -115,7 +110,7 @@ class ContinuousEvolution:
             List of neural networks.
         fitnesses : list
             List of fitness values corresponding to each network in the population.
-        num_parents : int
+        parent_count : int
             Number of parents to select.
 
         Returns
@@ -124,7 +119,7 @@ class ContinuousEvolution:
             List of selected parents (neural networks).
         """
         parents = sorted(zip(population, fitnesses), key=lambda x: x[1], reverse=True)
-        return [parent for parent, _ in parents[:num_parents]]
+        return [parent for parent, _ in parents[:parent_count]]
 
     def crossover(self, parent1: nn.Module, parent2: nn.Module) -> nn.Module:
         """
@@ -198,7 +193,7 @@ class ContinuousEvolution:
                 for net in self.population
             ]
             self.fitness_history.append(self.log_fitness(fitnesses))
-            parents = self.select_parents(self.population, fitnesses, self.parents)
+            parents = self.select_parents(self.population, fitnesses, self.parent_count)
 
             next_generation = []
             while len(next_generation) < self.population_size:
