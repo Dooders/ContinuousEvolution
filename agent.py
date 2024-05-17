@@ -1,9 +1,10 @@
 import torch
+from torch import nn
 
 from utils import seed
 
 
-class Agent:
+class Agent(nn.Module):
     """
     Base class for all agents in the simulation.
 
@@ -26,11 +27,12 @@ class Agent:
     """
 
     def __init__(self, model: torch.nn.Module, arguments: dict) -> None:
+        super(Agent, self).__init__()
         self.id = seed.id()
         self.arguments = arguments
         self.model = model(**arguments)
 
-    def __call__(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Forward pass through the model.
 
