@@ -23,8 +23,8 @@ settings = {"input_dim": 1, "hidden_dim": 3}
 evo = ContinuousEvolution(
     model=LSTMModel,
     settings=settings,
-    population=population_size,
-    parents=num_parents,
+    population_size=population_size,
+    parent_count=num_parents,
     crossover_strategy=AverageCrossover(),
     mutation_strategy=GaussianMutation(),
 )
@@ -35,14 +35,9 @@ if not past_outputs:
     past_outputs = [model(X[0]) for model in evo.population]
     past_actual_target = y[0]
 
-fitnesses = [
-    evo.evaluate_fitness(past_output, past_actual_target)
-    for past_output in past_outputs
-]
-past_best_model = evo.best(
-    past_input, past_actual_target
-)  #! Get rid of this and just take off the fitness list which will be a sorted list by fitness
-parents = evo.select_parents(evo.population, fitnesses, evo.parents)
+fitnesses = evo.fitness.evaluate(past_outputs, past_actual_target)
+best_model = evo.fitness.most_fit()
+parents = evo.select_parents(evo.population, fitnesses, evo.parent_count)
 
 next_generation = []
 while len(next_generation) < evo.population_size:
@@ -66,8 +61,9 @@ with torch.no_grad():
 # Plot the predictions from training data
 import matplotlib.pyplot as plt
 
-plt.figure(figsize=(15, 5))
+predictions = evo.population[best_model](X).detach().numpy()
+plt.figure(figsize=(12, 6))
 plt.plot(prices, label="Actual")
-plt.plot(past_best_model(X).detach().numpy(), label="Predicted")
+plt.plot(predictions, label="Predictions")
 plt.legend()
 plt.show()
