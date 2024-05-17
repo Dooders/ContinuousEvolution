@@ -96,7 +96,7 @@ class ContinuousEvolution:
         list
             List of SimpleSequentialNetwork instances.
         """
-        return [Agent(self.model(**self.settings)) for _ in range(size)]
+        return [Agent(self.model, self.settings) for _ in range(size)]
 
     def select_parents(
         self, population: list, fitnesses: list, parent_count: int
@@ -137,7 +137,9 @@ class ContinuousEvolution:
         nn.Module
             Child network created by crossover of the parents.
         """
-        return self.crossover_strategy.crossover(parent1, parent2)
+        return self.crossover_strategy.crossover(
+            parent1, parent2, self.model, self.settings
+        )
 
     def mutate(self, network: nn.Module) -> None:
         """
