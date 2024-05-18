@@ -16,6 +16,8 @@ class ContinuousEvolution:
     ----------
     model : nn.Module
         Neural network model to evolve.
+    criterion : nn.Module
+        Loss function to use.
     settings : dict
         Settings to pass to the model factory.
     population_size : int
@@ -65,6 +67,7 @@ class ContinuousEvolution:
     def __init__(
         self,
         model: nn.Module,
+        criterion: nn.Module,
         settings: dict,
         population_size: int,
         parent_count: int,
@@ -73,7 +76,7 @@ class ContinuousEvolution:
     ) -> None:
         self.model = model
         self.settings = settings
-        self.criterion = nn.MSELoss()
+        self.criterion = criterion
         self.population_size = population_size
         self.population = self._initialize_population(population_size)
         self.parent_count = parent_count

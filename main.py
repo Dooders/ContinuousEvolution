@@ -4,6 +4,7 @@ import torch
 from crossover import AverageCrossover
 from data import X, prices, y
 from evolve import ContinuousEvolution
+from loss import DirectionalMSELoss
 from lstm import LSTMModel
 from mutate import GaussianMutation
 
@@ -22,6 +23,7 @@ settings = {"input_dim": 1, "hidden_dim": 3}
 # Start the evolutionary training
 evo = ContinuousEvolution(
     model=LSTMModel,
+    criterion=DirectionalMSELoss(),
     settings=settings,
     population_size=population_size,
     parent_count=num_parents,
@@ -35,9 +37,11 @@ if not past_outputs:
     past_outputs = [model(X[0]) for model in evo.population]
     past_actual_target = y[0]
 
-fitnesses = evo.fitness.evaluate(past_outputs, past_actual_target)
+fitnesses = evo.fitness.evaluate(past_outputs, past_actual_target, y[0])
 best_model = evo.fitness.most_fit()
-parents = evo.select_parents(evo.population, fitnesses, evo.parent_count)
+parents = evo.select_parents(
+    evo.population, fitnesses, evo.parent_count
+)  #! Improve this process
 
 next_generation = []
 while len(next_generation) < evo.population_size:
