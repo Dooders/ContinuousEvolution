@@ -3,7 +3,21 @@ import torch.nn as nn
 
 
 class DirectionalMSELoss(nn.Module):
-    def __init__(self, weight: float = 1.0) -> None:
+    """
+    Directional MSE Loss.
+
+    Parameters
+    ----------
+    weight : float
+        Weight for the direction loss. Default is 0.1.
+
+    Methods
+    -------
+    forward(predictions: torch.Tensor, targets: torch.Tensor, previous_values: torch.Tensor) -> torch.Tensor:
+        Calculate the Directional MSE Loss.
+    """
+
+    def __init__(self, weight: float = 0.1) -> None:
         super(DirectionalMSELoss, self).__init__()
         self.weight = weight
         self.mse_loss = nn.MSELoss()
