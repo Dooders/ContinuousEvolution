@@ -8,6 +8,9 @@ from loss import DirectionalMSELoss
 from lstm import LSTMModel
 from mutate import GaussianMutation
 
+# Disabling gradient computation globally
+torch.set_grad_enabled(False)
+
 current_input = X[1]
 past_actual_target = y[0]
 past_input = X[0]
@@ -18,7 +21,6 @@ population_size = 100
 num_parents = 40
 
 settings = {"input_dim": 1, "hidden_dim": 3}
-# settings = {}
 
 # Start the evolutionary training
 evo = ContinuousEvolution(
