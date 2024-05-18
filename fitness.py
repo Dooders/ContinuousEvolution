@@ -4,6 +4,28 @@ import torch.nn as nn
 
 
 class Fitness:
+    """
+    Class to evaluate the fitness of a neural network on a dataset.
+
+    Parameters
+    ----------
+    criterion : nn.Module, optional
+        Loss function to use, by default nn.MSELoss.
+
+    Attributes
+    ----------
+    criterion : nn.Module
+        Loss function to use.
+    fitness_history : list
+        List of fitness values at each cycle.
+
+    Methods
+    -------
+    evaluate(past_outputs: list, past_actual: torch.Tensor, y: torch.Tensor) -> list:
+        Evaluate the fitness of each model in the population.
+    most_fit:
+        Return the index of the model with the highest fitness.
+    """
 
     def __init__(self, criterion: nn.Module = nn.MSELoss()) -> None:
         self.criterion = criterion
@@ -59,6 +81,7 @@ class Fitness:
         self.fitness_history.append(fitnesses)
         return fitnesses
 
+    @property
     def most_fit(self):
         #! Will need to update this to return the model with the highest fitness instead of the index
         return np.argmax(self.fitness_history[-1])
