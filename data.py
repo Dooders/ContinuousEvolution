@@ -50,6 +50,7 @@ def create_sequences(data: np.ndarray, N: int, lag: int) -> tuple:
 N = 3  # Using the last 3 prices to predict the next one
 X, y = create_sequences(prices, N, 1)
 
+
 # Convert to PyTorch tensors
 X = torch.tensor(X, dtype=torch.float32).unsqueeze(-1)  # Add feature dimension
 y = torch.tensor(y, dtype=torch.float32)
