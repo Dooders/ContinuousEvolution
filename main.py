@@ -40,7 +40,7 @@ if not past_outputs:
     past_actual_target = y[0]
 
 fitnesses = evo.fitness.evaluate(past_outputs, past_actual_target, y[0])
-best_model = evo.fitness.most_fit()
+best_model = evo.fitness.most_fit
 parents = evo.select_parents(
     evo.population, fitnesses, evo.parent_count
 )  #! Improve this process
