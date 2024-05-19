@@ -17,7 +17,7 @@ class DirectionalMSELoss(nn.Module):
         Calculate the Directional MSE Loss.
     """
 
-    def __init__(self, weight: float = 0.1) -> None:
+    def __init__(self, weight: float = 0.5) -> None:
         super(DirectionalMSELoss, self).__init__()
         self.weight = weight
         self.mse_loss = nn.MSELoss()
