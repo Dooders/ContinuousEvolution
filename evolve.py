@@ -1,3 +1,4 @@
+from collections import deque, namedtuple
 from typing import Tuple
 
 import numpy as np
@@ -58,10 +59,9 @@ class ContinuousEvolution:
         Create a child network by averaging the weights of two parent networks.
     mutate(network: nn.Module) -> None:
         Mutate the weights of a neural network in place.
-    run(cycles: int, X: torch.Tensor, y: torch.Tensor, history: bool = True) -> tuple:
-        Run the evolutionary training process.
-    log_fitness(fitness: list) -> Tuple[float, float, float]:
-        Calculates the Minimum, Maximum and Average fitness values for each generation.
+    run(X: torch.Tensor, sequence_length: int) -> torch.Tensor:
+        Run the evolutionary training process. The sequence length is the number of past
+        inputs to consider for each prediction.
     """
 
     def __init__(
@@ -81,9 +81,12 @@ class ContinuousEvolution:
         self.population = self._initialize_population(population_size)
         self.parent_count = parent_count
         self.population_history = []
+        self.predictions = []
         self.fitness = Fitness(self.criterion)
         self.crossover_strategy = crossover_strategy
         self.mutation_strategy = mutation_strategy
+        self.input_buffer = deque(maxlen=200)
+        self.output_buffer = deque(maxlen=200)
 
     def _initialize_population(self, size: int) -> list:
         """
@@ -157,47 +160,43 @@ class ContinuousEvolution:
 
     def run(
         self,
-        max_cycles: int,
         X: torch.Tensor,
-        y: torch.Tensor,
-        history: bool = True,
-        early_stopping: float = None,
-    ) -> tuple:
+        sequence_length: int,
+    ) -> torch.Tensor:
         """
         Run the evolutionary training process.
 
-        First, evaluate the fitness of each network in the population.
-        Then, select the best parents based on fitness.
-        Create a new generation by crossing over and mutating the parents.
-        Repeat for the specified number of cycles.
-
         Parameters
         ----------
-        max_cycles : int
-            Max number of training cycles.
         X : torch.Tensor
-            Input data of shape (batch_size, num_features).
-        y : torch.Tensor
-            Target labels of shape (batch_size, 1).
-        history : bool, optional
-            Whether to store the population history, by default True.
-        early_stopping : float, optional
-            Stop training if the best fitness exceeds this value, by default None.
+            Input tensor to predict from.
+        sequence_length : int
+            Length of the sequence to consider for each prediction.
 
         Returns
         -------
-        tuple
-            Final population of neural networks and the best fit network.
+        torch.Tensor
+            Predicted output tensor from the best model in the population.
         """
 
-        for cycle in range(max_cycles):
-            if history:
-                self.population_history.append(self.population.copy())
-            fitnesses = [
-                self.evaluate_fitness(net, self.criterion, X, y)
-                for net in self.population
-            ]
-            self.fitness_history.append(self.log_fitness(fitnesses))
+        self.input_buffer.append(X)
+        sequence_list = list(self.input_buffer)[-sequence_length:]
+        input_sequence = torch.tensor(sequence_list, dtype=torch.float32).unsqueeze(
+            -1
+        )  # Add feature dimension
+        best_model = self.population[0]
+
+        # Evaluate the fitness of the population and select parents
+        # This is a delayed feedback loop from previous predictions
+        if len(self.output_buffer) > 1:
+            past_outputs = self.output_buffer[-1]
+            actual_target = self.input_buffer[-1]
+            past_actual_target = self.input_buffer[-2]
+            fitnesses = self.fitness.evaluate(
+                past_outputs, actual_target, past_actual_target
+            )
+            best_model_index = self.fitness.most_fit
+            best_model = self.population[best_model_index]
             parents = self.select_parents(self.population, fitnesses, self.parent_count)
 
             next_generation = []
@@ -212,29 +211,15 @@ class ContinuousEvolution:
             self.population = next_generation
 
             print(
-                f"Cycle {cycle}: Average fitness: {np.mean(fitnesses):.2f} Best: {max(fitnesses):.2f} Worst: {min(fitnesses):.2f}"
+                f"Average fitness: {np.mean(fitnesses):.4f} Best: {max(fitnesses):.4f} Worst: {min(fitnesses):.4f}"
             )
-            if early_stopping and max(fitnesses) >= -early_stopping:
-                print(f"Early stopping at cycle {cycle}")
-                break
+        with torch.no_grad():
+            new_outputs = [model(input_sequence) for model in self.population]
+            self.output_buffer.append(new_outputs)
 
-        if history:
-            self.population_history.append(self.population.copy())
+            #! This is a hack to get the best model from the population
+            #! This should be done in a better way
+            final_output = best_model(input_sequence)
+            self.predictions.append(final_output)
 
-        return self.population, self.best(X, y)
-
-    def log_fitness(self, fitness: list) -> Tuple[float, float, float]:
-        """
-        Stores the Minimum, Maximum and Average fitness values for each generation.
-
-        Parameters
-        ----------
-        fitness : list
-            List of fitness values for each network in the population.
-
-        Returns
-        -------
-        Tuple[float, float, float]
-            Minimum, Maximum and Average fitness values.
-        """
-        return min(fitness), max(fitness), np.mean(fitness)
+            return final_output
