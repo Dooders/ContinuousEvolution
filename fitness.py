@@ -32,7 +32,7 @@ class Fitness:
         self.fitness_history = []
 
     def _evaluate(
-        self, past_outputs: torch.Tensor, past_actual: torch.Tensor, y: torch.Tensor
+        self, past_outputs: torch.Tensor, past_actual: torch.Tensor
     ) -> float:
         """
         Evaluate the fitness of a neural network on a dataset.
@@ -52,7 +52,7 @@ class Fitness:
             Negative loss value as fitness. Lower loss is better.
         """
         past_actual = past_actual.unsqueeze(0)
-        loss = self.criterion(past_outputs, past_actual, y)
+        loss = self.criterion(past_outputs, past_actual)
         return -loss.item()  # Using negative loss as fitness, lower loss is better
 
     def evaluate(
@@ -76,7 +76,7 @@ class Fitness:
             List of fitness values for each model.
         """
         fitnesses = [
-            self._evaluate(past_output, past_actual, y) for past_output in past_outputs
+            self._evaluate(past_output, past_actual) for past_output in past_outputs
         ]
         self.fitness_history.append(fitnesses)
         return fitnesses
