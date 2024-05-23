@@ -223,3 +223,33 @@ class ContinuousEvolution:
             self.predictions.append(final_output)
 
             return final_output
+
+    def simulate(
+        self, model: nn.Module, starting_value: float, cycles: int = 100
+    ) -> list:
+        """
+        Simulate the model for a number of cycles to assess its performance
+        without reproduction or fitness evaluation.
+
+        Parameters
+        ----------
+        model : nn.Module
+            Model to simulate.
+        starting_value : float
+            Starting value for the simulation.
+        cycles : int
+            Number of cycles to simulate.
+
+        Returns
+        -------
+        list
+            List of results from the simulation.
+        """
+        previous = starting_value
+        results = []
+        for _ in range(cycles):
+            result = model(torch.tensor(previous, dtype=torch.float32))
+            results.append(result.item())
+            previous = result.item()
+
+        return results
