@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 import torch.nn.init as init
 
@@ -19,8 +20,18 @@ class LSTMModel(nn.Module):
         init.xavier_uniform_(self.linear.weight)
         self.linear.bias.data.fill_(0.01)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # Ensure input tensor has correct shape
+        if len(x.shape) == 2:
+            x = x.unsqueeze(1)  # Add sequence dimension if missing
+
         # Forward pass through LSTM
-        output, _ = self.lstm(x)
-        # Pass the output of the last timestep through the linear layer
-        return self.linear(output[:, -1])
+        lstm_out, _ = self.lstm(x)
+
+        # Get the last output
+        last_output = lstm_out[:, -1, :]
+
+        # Forward pass through linear layer
+        linear_out = self.linear(last_output)
+
+        return linear_out
