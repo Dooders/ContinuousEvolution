@@ -248,8 +248,9 @@ class ContinuousEvolution:
         previous = starting_value
         results = []
         for _ in range(cycles):
-            result = model(torch.tensor(previous, dtype=torch.float32))
-            results.append(result.item())
-            previous = result.item()
+            value = torch.tensor(previous, dtype=torch.float32)
+            prediction = model(value.unsqueeze(0).unsqueeze(-1))
+            results.append(prediction.item())
+            previous = prediction.item()
 
         return results
