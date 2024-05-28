@@ -15,7 +15,7 @@ class ContinuousEvolution:
 
     Parameters
     ----------
-    model : nn.Module
+    agent_model : nn.Module
         Neural network model to evolve.
     criterion : nn.Module
         Loss function to use.
@@ -32,7 +32,7 @@ class ContinuousEvolution:
 
     Attributes
     ----------
-    model : nn.Module
+    agent_model : nn.Module
         Neural network model to evolve.
     criterion : nn.Module
         Loss function to use.
@@ -66,7 +66,7 @@ class ContinuousEvolution:
 
     def __init__(
         self,
-        model: nn.Module,
+        agent_model: nn.Module,
         criterion: nn.Module,
         settings: dict,
         population_size: int,
@@ -74,7 +74,7 @@ class ContinuousEvolution:
         crossover_strategy,
         mutation_strategy,
     ) -> None:
-        self.model = model
+        self.model = agent_model
         self.settings = settings
         self.criterion = criterion
         self.population_size = population_size
