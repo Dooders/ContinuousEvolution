@@ -1,8 +1,6 @@
 import torch
 from torch import nn
 
-from utils import seed
-
 
 class Agent(nn.Module):
     """
@@ -28,9 +26,9 @@ class Agent(nn.Module):
 
     def __init__(self, model: torch.nn.Module, arguments: dict) -> None:
         super(Agent, self).__init__()
-        self.id = seed.id()
         self.arguments = arguments
         self.model = model(**arguments)
+        self.id = self.model.id
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
