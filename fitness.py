@@ -105,7 +105,12 @@ class TradingFitness(Fitness):
     So the class will need the agent's history and the results from the agent's actions.
     """
 
-    def evaluate(self, past_outputs: list, price_went_down: bool):
+    def __init__(self, criterion: nn.Module = nn.MSELoss()) -> None:
+        super().__init__(criterion)
+
+        self.agent_history = []
+
+    def evaluate(self, past_outputs: list, price_went_down: bool) -> list:
         """
         Evaluates the agents based on their predictions and the actual price movement.
 
@@ -136,4 +141,17 @@ class TradingFitness(Fitness):
                 # Higher scores for outputs closer to 0
                 score = 1 - output
             scores.append(score)
+
+        self.fitness_history.append(scores)
+
         return scores
+
+    @property
+    def most_fit(self) -> int:
+        """
+        Returns
+        -------
+        int
+            The index of the agent with the highest fitness.
+        """
+        return np.argmax(self.fitness_history[-1])
