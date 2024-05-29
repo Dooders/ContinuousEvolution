@@ -31,9 +31,7 @@ class Fitness:
         self.criterion = criterion
         self.fitness_history = []
 
-    def _evaluate(
-        self, past_outputs: torch.Tensor, past_actual: torch.Tensor
-    ) -> float:
+    def _evaluate(self, past_outputs: torch.Tensor, past_actual: torch.Tensor) -> float:
         """
         Evaluate the fitness of a neural network on a dataset.
 
@@ -85,3 +83,57 @@ class Fitness:
     def most_fit(self):
         #! Will need to update this to return the model with the highest fitness instead of the index
         return np.argmax(self.fitness_history[-1])
+
+
+class TradingFitness(Fitness):
+    """
+    Will return if the agent should be removed or not based on the fitness value.
+
+    Need to figure out how to score the agent based on the outcome.
+
+    Fitness scenarios:
+    - Agent sells, loses money (removed)
+    - Agent sells, makes money (remains)
+    - Agent does not sell, misses out on  R profit (removed)
+    - Agent does not sell, avoids loss (remains)
+    - Agent sells, has loss but has a good history (remains?)
+    - Agent has N streak of losses, even with net profit (removed)
+
+    N is the number of losses in a row before the agent is removed.
+    R is the profit that the agent missed out on.
+
+    So the class will need the agent's history and the results from the agent's actions.
+    """
+
+    def evaluate(self, past_outputs: list, price_went_down: bool):
+        """
+        Evaluates the agents based on their predictions and the actual price movement.
+
+        If the price went down, the agents are scored based on how close their
+        predictions were to 1.
+
+        If the price went up, the agents are scored based on how close their
+        predictions were to 0.
+
+        Parameters
+        ----------
+        outputs : list of float
+            The outputs of the agents' predictions.
+        price_went_down : bool
+            Indicates if the price went down (True) or up (False).
+
+        Returns
+        -------
+        scores : list of int
+            The evaluation scores ranging from 0 to 99.
+        """
+        scores = []
+        for output in past_outputs:
+            if price_went_down:
+                # Higher scores for outputs closer to 1
+                score = output
+            else:
+                # Higher scores for outputs closer to 0
+                score = 1 - output
+            scores.append(score)
+        return scores
