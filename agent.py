@@ -45,3 +45,9 @@ class Agent(nn.Module):
             Output tensor.
         """
         return self.model(x)
+
+    def __str__(self) -> str:
+        return f"Agent {self.id}"
+
+    def __repr__(self) -> str:
+        return f"Agent {self.id}"
