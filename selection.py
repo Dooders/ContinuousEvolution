@@ -19,25 +19,19 @@ class RouletteWheel(Selection):
 
     This simulates a roulette wheel where each individual occupies a slice of the
     wheel proportional to its fitness score.
-
-    Parameters
-    ----------
-    population : list
-        List of agents in the population.
-    fitnesses : list
-        List of fitness values corresponding to each agent in the population.
     """
 
-    def __init__(self, population: list, fitnesses: list) -> None:
-        self.population = population
-        self.fitnesses = fitnesses
-
-    def select(self, n: int) -> list:
+    @classmethod
+    def select(cls, population: list, fitnesses: list, n: int) -> list:
         """
         Select n agents from the population based on fitnesses.
 
         Parameters
         ----------
+        population : list
+            List of agents in the population.
+        fitnesses : list
+            List of fitness values corresponding to each agent in the population.
         n : int
             Number of agents to select.
 
@@ -46,12 +40,12 @@ class RouletteWheel(Selection):
         list
             List of selected agents.
         """
-        total_fitness = sum(self.fitnesses)
+        total_fitness = sum(fitnesses)
         # Avoid division by zero; randomly choose an agent
         if total_fitness == 0:
-            return [random.choice(self.population) for _ in range(n)]
-        probabilities = [f / total_fitness for f in self.fitnesses]
-        selected = random.choices(self.population, probabilities, k=n)
+            return [random.choice(population) for _ in range(n)]
+        probabilities = [f / total_fitness for f in fitnesses]
+        selected = random.choices(population, probabilities, k=n)
         return selected
 
 
