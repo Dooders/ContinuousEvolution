@@ -2,29 +2,52 @@ import random
 from abc import ABC, abstractmethod
 
 from agent import Agent
+from population import Population
 
 
 class Selection(ABC):
+    """
+    Abstract class for selection methods.
+
+    Intended to be used as a base class to be inherited where the select method
+    returns a Population object of the selected agents.
+
+    A Selection subclass is passed to the ContinuousEvolution object during initialization.
+
+    Parameters
+    ----------
+    population : Population[Agent]
+        The population of agents to select from.
+    n : int
+        The number of agents to select.
+
+    Returns
+    -------
+    Population[Agent]
+        The selected population of agents.
+    """
+
+    @classmethod
     @abstractmethod
-    def select(self, population: list, fitnesses: list, n: int) -> "Agent":
+    def select(self, population: "Population[Agent]", n: int) -> "Population[Agent]":
         """
-        Select an agent from the population based on fitnesses.
+        Select n agents from the population.
 
         Parameters
         ----------
-        population : list
-            List of agents in the population.
-        fitnesses : list
-            List of fitness values corresponding to each agent in the population.
+        population : "Population[Agent]"
+            List of agents in the population, sorted desc by fitness.
         n : int
             Number of agents to select.
 
         Returns
         -------
-        list
-            List of selected agents.
+        "Population[Agent]"
+            List of selected agents of length n.
         """
-        raise NotImplementedError("Select method not implemented.")
+        raise NotImplementedError(
+            "Select method not implemented. See documentation for details."
+        )
 
 
 class RouletteWheel(Selection):
@@ -37,13 +60,27 @@ class RouletteWheel(Selection):
     wheel proportional to its fitness score.
     """
 
-    @classmethod
-    def select(cls, population: list, fitnesses: list, n: int) -> list:
-        total_fitness = sum(fitnesses)
+    def select(cls, population: "Population[Agent]", n: int) -> "Population[Agent]":
+        """
+        Select n agents from the population.
+
+        Parameters
+        ----------
+        population : "Population[Agent]"
+            List of agents in the population, sorted desc by fitness.
+        n : int
+            Number of agents to select.
+
+        Returns
+        -------
+        "Population[Agent]"
+            List of selected agents of length n.
+        """
+        total_fitness = sum(population.fitness)
         # Avoid division by zero; randomly choose an agent
         if total_fitness == 0:
             return [random.choice(population) for _ in range(n)]
-        probabilities = [f / total_fitness for f in fitnesses]
+        probabilities = [f / total_fitness for f in population.fitnesses]
         selected = random.choices(population, probabilities, k=n)
         return selected
 
@@ -54,18 +91,31 @@ class Tournament(Selection):
 
     The tournament selection process involves selecting k individuals from the population
     and then selecting the best individual from the k individuals.
-
-    Parameters
-    ----------
-    k : int
-        Number of individuals to select in each tournament.
     """
 
-    @classmethod
-    def select(cls, population: list, fitnesses: list, k: int, n: int) -> list:
+    def select(
+        cls, population: "Population[Agent]", n: int, k: int
+    ) -> "Population[Agent]":
+        """
+        Select n agents from the population.
+
+        Parameters
+        ----------
+        population : "Population[Agent]"
+            List of agents in the population, sorted desc by fitness.
+        n : int
+            Number of agents to select.
+        k : int
+            Number of agents to select in each tournament.
+
+        Returns
+        -------
+        "Population[Agent]"
+            List of selected agents of length n.
+        """
         selected = []
         for _ in range(n):
-            tournament = random.sample(list(zip(population, fitnesses)), k)
+            tournament = random.sample(list(zip(population, population.fitness)), k)
             winner = max(tournament, key=lambda x: x[1])[0]
             selected.append(winner)
         return selected
@@ -79,10 +129,24 @@ class Rank(Selection):
     and then selecting individuals based on their rank.
     """
 
-    @classmethod
-    def select(cls, population: list, fitnesses: list, n: int) -> list:
+    def select(cls, population: "Population[Agent]", n: int) -> "Population[Agent]":
+        """
+        Select n agents from the population.
+
+        Parameters
+        ----------
+        population : "Population[Agent]"
+            List of agents in the population, sorted desc by fitness.
+        n : int
+            Number of agents to select.
+
+        Returns
+        -------
+        "Population[Agent]"
+            List of selected agents of length n.
+        """
         ranked_population = sorted(
-            list(zip(population, fitnesses)), key=lambda x: x[1], reverse=True
+            list(zip(population, population.fitness)), key=lambda x: x[1], reverse=True
         )
         selected = [agent for agent, _ in ranked_population[:n]]
         return selected
@@ -96,10 +160,24 @@ class Elitism(Selection):
     The elitism selection process involves selecting the best individuals from the population.
     """
 
-    @classmethod
-    def select(cls, population: list, fitnesses: list, n: int) -> list:
+    def select(cls, population: "Population[Agent]", n: int) -> "Population[Agent]":
+        """
+        Select n agents from the population.
+
+        Parameters
+        ----------
+        population : "Population[Agent]"
+            List of agents in the population, sorted desc by fitness.
+        n : int
+            Number of agents to select.
+
+        Returns
+        -------
+        "Population[Agent]"
+            List of selected agents of length n.
+        """
         ranked_population = sorted(
-            list(zip(population, fitnesses)), key=lambda x: x[1], reverse=True
+            list(zip(population, population.fitness)), key=lambda x: x[1], reverse=True
         )
         selected = [agent for agent, _ in ranked_population[:n]]
         return selected
@@ -113,8 +191,23 @@ class StochasticUniversalSampling(Selection):
     based on their fitness and a random starting point.
     """
 
-    def select(cls, population: list, fitnesses: list, n: int) -> list:
-        total_fitness = sum(fitnesses)
+    def select(cls, population: "Population[Agent]", n: int) -> "Population[Agent]":
+        """
+        Select n agents from the population.
+
+        Parameters
+        ----------
+        population : "Population[Agent]"
+            List of agents in the population, sorted desc by fitness.
+        n : int
+            Number of agents to select.
+
+        Returns
+        -------
+        "Population[Agent]"
+            List of selected agents of length n.
+        """
+        total_fitness = sum(population.fitness)
         if total_fitness == 0:
             return [random.choice(population) for _ in range(n)]
         distance = total_fitness / n
@@ -124,7 +217,7 @@ class StochasticUniversalSampling(Selection):
         current = 0
         for pointer in pointers:
             while pointer > 0:
-                pointer -= fitnesses[current]
+                pointer -= population.fitness[current]
                 current += 1
             selected.append(population[current - 1])
         return selected
@@ -142,10 +235,24 @@ class Truncation(Selection):
     the next generation.
     """
 
-    @classmethod
-    def select(cls, population: list, fitnesses: list, n: int) -> list:
+    def select(cls, population: "Population[Agent]", n: int) -> "Population[Agent]":
+        """
+        Select n agents from the population.
+
+        Parameters
+        ----------
+        population : "Population[Agent]"
+            List of agents in the population, sorted desc by fitness.
+        n : int
+            Number of agents to select.
+
+        Returns
+        -------
+        "Population[Agent]"
+            List of selected agents of length n.
+        """
         ranked_population = sorted(
-            list(zip(population, fitnesses)), key=lambda x: x[1], reverse=True
+            list(zip(population, population.fitness)), key=lambda x: x[1], reverse=True
         )
         selected = [agent for agent, _ in ranked_population[:n]]
         return selected
@@ -157,18 +264,29 @@ class Boltzmann(Selection):
 
     The Boltzmann selection process involves selecting individuals based on their fitness
     and a temperature parameter.
-
-    Parameters
-    ----------
-    temperature : float
-        Temperature parameter for Boltzman selection.
     """
 
-    @classmethod
     def select(
-        cls, population: list, fitnesses: list, n: int, temperature: float
-    ) -> list:
-        probabilities = cls._boltzman_probabilities(fitnesses, temperature)
+        cls, population: "Population[Agent]", n: int, temperature: float
+    ) -> "Population[Agent]":
+        """
+        Select n agents from the population.
+
+        Parameters
+        ----------
+        population : "Population[Agent]"
+            List of agents in the population, sorted desc by fitness.
+        n : int
+            Number of agents to select.
+        temperature : float
+            Temperature parameter for Boltzmann selection.
+
+        Returns
+        -------
+        "Population[Agent]"
+            List of selected agents of length n.
+        """
+        probabilities = cls._boltzman_probabilities(population.fitness, temperature)
         selected = random.choices(population, probabilities, k=n)
         return selected
 
@@ -197,18 +315,29 @@ class Softmax(Selection):
 
     The softmax selection process involves selecting individuals based on their fitness
     and a temperature parameter.
-
-    Parameters
-    ----------
-    temperature : float
-        Temperature parameter for softmax selection.
     """
 
-    @classmethod
     def select(
-        cls, population: list, fitnesses: list, n: int, temperature: float
-    ) -> list:
-        probabilities = cls._softmax_probabilities(fitnesses, temperature)
+        cls, population: "Population[Agent]", n: int, temperature: float
+    ) -> "Population[Agent]":
+        """
+        Select n agents from the population.
+
+        Parameters
+        ----------
+        population : "Population[Agent]"
+            List of agents in the population, sorted desc by fitness.
+        n : int
+            Number of agents to select.
+        temperature : float
+            Temperature parameter for softmax selection.
+
+        Returns
+        -------
+        "Population[Agent]"
+            List of selected agents of length n.
+        """
+        probabilities = cls._softmax_probabilities(population.fitness, temperature)
         selected = random.choices(population, probabilities, k=n)
         return selected
 
@@ -244,9 +373,27 @@ class FitnessScaling(Selection):
         Scaling factor for fitness scaling.
     """
 
-    @classmethod
-    def select(cls, population: list, fitnesses: list, n: int, alpha: float) -> list:
-        scaled_fitnesses = cls._fitness_scaling(fitnesses, alpha)
+    def select(
+        cls, population: "Population[Agent]", n: int, alpha: float
+    ) -> "Population[Agent]":
+        """
+        Select n agents from the population.
+
+        Parameters
+        ----------
+        population : "Population[Agent]"
+            List of agents in the population, sorted desc by fitness.
+        n : int
+            Number of agents to select.
+        alpha : float
+            Scaling factor for fitness scaling.
+
+        Returns
+        -------
+        "Population[Agent]"
+            List of selected agents of length n.
+        """
+        scaled_fitnesses = cls._fitness_scaling(population.fitness, alpha)
         selected = random.choices(population, scaled_fitnesses, k=n)
         return selected
 
