@@ -1,18 +1,9 @@
-class Populations(list):
-    def __init__(self, population_size: int):
-        self.population_size = population_size
+class Population(list):  #! will be a heap in the future
+    """
+    A list of agents representing the population.
 
-    def select(self, selection_strategy):
-        return selection_strategy(self)
+    Sorted desc by fitness.
+    """
 
-    def reproduce(self, reproduction_strategy):
-        # Select the parents
-        # Create offspring
-        # Mutate the offspring
-        pass
-
-    def vote(self, voting_strategy):
-        return voting_strategy(self)
-
-    def fitness(self, fitness_strategy):
-        return fitness_strategy(self)
+    def __init__(self, *args):
+        super().__init__(*args)
