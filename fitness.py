@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
+Fitnesses: list[float] # sorted? heap?
 
 class Fitness:
     """
