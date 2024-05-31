@@ -1,18 +1,39 @@
-from abc import abstractmethod
-from typing import List
+from abc import ABC, abstractmethod
 
 from agent import Agent
 from population import Population
 
 
-class Fitness:
+class Fitness(ABC):
     """
     Abstract class for fitness functions.
+
+    Intended to be used as a base class to be inherited where the evaluate method
+    returns a Population object of the agent updated fitness scores
+
+    A Fitness subclass is passed to the ContinuousEvolution object during initialization.
     """
 
     @classmethod
     @abstractmethod
-    def evaluate(cls, population: Population[Agent], results: list) -> list:
+    def evaluate(
+        cls, population: "Population[Agent]", results: list
+    ) -> "Population[Agent]":
+        """
+        Classmethod to evaluate the fitness of the agents in the population.
+
+        Parameters
+        ----------
+        population : Population[Agent]
+            The population of agents to evaluate.
+        results : list
+            The results of the agents' actions.
+
+        Returns
+        -------
+        Population[Agent]
+            The updated population of agents with updated fitness scores.
+        """
 
         raise NotImplementedError("Subclasses must implement this method")
 
@@ -37,5 +58,7 @@ class TradingFitness(Fitness):
     So the class will need the agent's history and the results from the agent's actions.
     """
 
-    def evaluate(self, population, results: list) -> list:
+    def evaluate(
+        self, population: "Population[Agent]", results: list
+    ) -> "Population[Agent]":
         pass
