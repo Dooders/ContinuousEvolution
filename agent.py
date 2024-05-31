@@ -1,34 +1,53 @@
+from typing import Any, Dict, List, Tuple, Type
+
 import torch
 from torch import nn
+
+from utils import model_hash
+
+Parents = Tuple["Agent", "Agent"]
+Children = List["Agent"]
 
 
 class Agent(nn.Module):
     """
-    Base class for all agents in the simulation.
+    Custom pytorch nn.Module extension representing an agent.
 
     Parameters
     ----------
     model : torch.nn.Module
         Neural network model class.
-    arguments : dict
+    arguments : Dict[str, Any]
         Arguments to pass to the model class.
 
     Attributes
     ----------
-    id : int
+    model : torch.nn.Module
+        Neural network model instance.
+    id : str
         Unique identifier for the agent.
 
     Methods
     -------
-    __call__(x: torch.Tensor) -> torch.Tensor:
+    forward(x: torch.Tensor) -> torch.Tensor:
         Forward pass through the model.
     """
 
-    def __init__(self, model: torch.nn.Module, arguments: dict) -> None:
-        super(Agent, self).__init__()
-        self.arguments = arguments
-        self.model = model(**arguments)
-        self.id = self.model.id
+    def __init__(self, model_cls: Type[nn.Module], arguments: Dict[str, Any]) -> None:
+        super().__init__()
+        try:
+            self.arguments = arguments
+            self.model = model_cls(**arguments)
+            self.id = model_hash(self.model)
+            self.parents: "Parents" = None
+            self.children: "Children" = []
+            self.fitness = None
+        except TypeError as e:
+            raise ValueError(
+                f"Error initializing model with arguments {arguments}: {e}"
+            )
+        except Exception as e:
+            raise ValueError(f"Unexpected error initializing model: {e}")
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -50,4 +69,51 @@ class Agent(nn.Module):
         return f"Agent {self.id}"
 
     def __repr__(self) -> str:
-        return f"Agent {self.id}"
+        return self.__str__()
+
+
+class AgentFactory:
+    """
+    Factory class for creating agents.
+
+    Parameters
+    ----------
+    model_cls : torch.nn.Module
+        Neural network model class.
+
+    Attributes
+    ----------
+    model_cls : torch.nn.Module
+        Neural network model class.
+
+    Methods
+    -------
+    create(arguments: Dict[str, Any]) -> Agent:
+        Create an agent with the given arguments.
+    """
+
+    def __init__(self, model_cls: Type[nn.Module]) -> None:
+        self.model_cls = model_cls
+
+    def create(self, arguments: Dict[str, Any]) -> "Agent":
+        """
+        Create an agent with the given arguments.
+
+        Parameters
+        ----------
+        arguments : Dict[str, Any]
+            Arguments to pass to the model class.
+
+        Returns
+        -------
+        Agent
+            Agent instance.
+        """
+        try:
+            return Agent(self.model_cls, arguments)
+        except ValueError as e:
+            print(f"Error creating agent: {e}")
+            raise
+        except Exception as e:
+            print(f"Unexpected error creating agent: {e}")
+            raise
