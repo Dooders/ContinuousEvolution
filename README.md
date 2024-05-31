@@ -71,7 +71,7 @@ The user will select a mutation strategy to use during the simulation.
 
 initial arguments:
 methods:
-attributes:
+attributes: fitness, parents, children, id, ???
 properties:
 
 The neural network architecture to use for the agent.
