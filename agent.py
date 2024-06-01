@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Tuple, Type
+from typing import Any, Dict, Type
 
 import torch
 from torch import nn
@@ -72,41 +72,31 @@ class AgentFactory:
     """
     Factory class for creating agents.
 
-    Parameters
-    ----------
-    model_cls : torch.nn.Module
-        Neural network model class.
-
-    Attributes
-    ----------
-    model_cls : torch.nn.Module
-        Neural network model class.
-
     Methods
     -------
     create(arguments: Dict[str, Any]) -> Agent:
         Create an agent with the given arguments.
     """
 
-    def __init__(self, model_cls: Type[nn.Module]) -> None:
-        self.model_cls = model_cls
-
-    def create(self, arguments: Dict[str, Any]) -> "Agent":
+    @classmethod
+    def create(self, model_cls: Type[nn.Module], arguments: Dict[str, Any]) -> "Agent":
         """
         Create an agent with the given arguments.
 
         Parameters
         ----------
+        model_cls : torch.nn.Module
+            Neural network model class. i.e. SimpleSequentialNetwork
         arguments : Dict[str, Any]
             Arguments to pass to the model class.
 
         Returns
         -------
         Agent
-            Agent instance.
+            Agent instance based on provided arguments.
         """
         try:
-            return Agent(self.model_cls, arguments)
+            return Agent(model_cls, arguments)
         except ValueError as e:
             print(f"Error creating agent: {e}")
             raise
