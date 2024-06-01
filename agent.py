@@ -79,7 +79,9 @@ class AgentFactory:
     """
 
     @classmethod
-    def create(self, model_cls: Type[nn.Module], arguments: Dict[str, Any]) -> "Agent":
+    def create(
+        self, model_cls: Type[nn.Module], arguments: Dict[str, Any] = {}
+    ) -> "Agent":
         """
         Create an agent with the given arguments.
 
@@ -87,7 +89,7 @@ class AgentFactory:
         ----------
         model_cls : torch.nn.Module
             Neural network model class. i.e. SimpleSequentialNetwork
-        arguments : Dict[str, Any]
+        arguments : Dict[str, Any], optional
             Arguments to pass to the model class.
 
         Returns
