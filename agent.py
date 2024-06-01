@@ -5,9 +5,6 @@ from torch import nn
 
 from utils import model_hash
 
-Parents = Tuple["Agent", "Agent"]
-Children = List["Agent"]
-
 
 class Agent(nn.Module):
     """
@@ -39,9 +36,7 @@ class Agent(nn.Module):
             self.arguments = arguments
             self.model = model_cls(**arguments)
             self.id = model_hash(self.model)
-            self.parents: "Parents" = None
-            self.children: "Children" = []
-            self.fitness = None
+            self.fitness = 0
         except TypeError as e:
             raise ValueError(
                 f"Error initializing model with arguments {arguments}: {e}"
@@ -51,6 +46,7 @@ class Agent(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
+        #! Add state update logic to update age, etc.
         Forward pass through the model.
 
         Parameters
