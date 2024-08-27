@@ -1,4 +1,12 @@
-from typing import Any, Dict, Type
+"""
+This module contains the implementation of the Agent class and the AgentFactory
+class.
+
+The Agent class is a custom PyTorch nn.Module extension representing an agent.
+It includes methods for forward pass, state retrieval, and creation from a model.
+"""
+
+from typing import Any, Dict, Type, Union
 
 import torch
 from torch import nn
@@ -8,14 +16,14 @@ from utils import model_hash
 
 class Agent(nn.Module):
     """
-    Custom pytorch nn.Module extension representing an agent.
+    Custom PyTorch nn.Module extension representing an agent.
 
     Parameters
     ----------
-    model : torch.nn.Module
-        Neural network model class.
-    arguments : Dict[str, Any]
-        Arguments to pass to the model class.
+    model : Union[torch.nn.Module, Type[nn.Module]]
+        Neural network model instance or model class.
+    arguments : Dict[str, Any], optional
+        Arguments to pass to the model class if a model class is provided.
 
     Attributes
     ----------
@@ -23,30 +31,43 @@ class Agent(nn.Module):
         Neural network model instance.
     id : str
         Unique identifier for the agent.
+    arguments : Dict[str, Any]
+        Arguments used to initialize the model.
+    fitness : float
+        Fitness of the agent.
 
     Methods
     -------
     forward(x: torch.Tensor) -> torch.Tensor:
         Forward pass through the model.
+    state(self) -> Dict[str, Any]:
+        Get the state of the agent.
+    from_model(cls, model: nn.Module, arguments: Dict[str, Any] = None) -> "Agent":
+        Create an agent from a model.
     """
 
-    def __init__(self, model_cls: Type[nn.Module], arguments: Dict[str, Any]) -> None:
+    def __init__(
+        self, model: Union[nn.Module, Type[nn.Module]], arguments: Dict[str, Any] = None
+    ) -> None:
         super().__init__()
-        try:
-            self.arguments = arguments
-            self.model = model_cls(**arguments)
-            self.id = model_hash(self.model)
-            self.fitness = 0
-        except TypeError as e:
-            raise ValueError(
-                f"Error initializing model with arguments {arguments}: {e}"
-            )
-        except Exception as e:
-            raise ValueError(f"Unexpected error initializing model: {e}")
+        if isinstance(model, nn.Module):
+            # If an instantiated model is provided
+            self.model = model
+        else:
+            # If a model class is provided, instantiate it using the arguments
+            if arguments is None:
+                raise ValueError(
+                    "Arguments must be provided when initializing from a model class."
+                )
+            self.model = model(**arguments)
+
+        self.arguments = arguments
+        self.id = model_hash(self.model)
+        self.temporal_id = self.id
+        self.fitness = 0
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
-        #! Add state update logic to update age, etc.
         Forward pass through the model.
 
         Parameters
@@ -67,41 +88,13 @@ class Agent(nn.Module):
     def __repr__(self) -> str:
         return self.__str__()
 
-
-class AgentFactory:
-    """
-    Factory class for creating agents.
-
-    Methods
-    -------
-    create(arguments: Dict[str, Any]) -> Agent:
-        Create an agent with the given arguments.
-    """
+    def state(self) -> Dict[str, Any]:
+        return {
+            "id": self.id,
+            "temporal_id": model_hash(self.model),
+            "fitness": self.fitness,
+        }
 
     @classmethod
-    def create(
-        self, model_cls: Type[nn.Module], arguments: Dict[str, Any] = {}
-    ) -> "Agent":
-        """
-        Create an agent with the given arguments.
-
-        Parameters
-        ----------
-        model_cls : torch.nn.Module
-            Neural network model class. i.e. SimpleSequentialNetwork
-        arguments : Dict[str, Any], optional
-            Arguments to pass to the model class.
-
-        Returns
-        -------
-        Agent
-            Agent instance based on provided arguments.
-        """
-        try:
-            return Agent(model_cls, arguments)
-        except ValueError as e:
-            print(f"Error creating agent: {e}")
-            raise
-        except Exception as e:
-            print(f"Unexpected error creating agent: {e}")
-            raise
+    def from_model(cls, model: nn.Module, arguments: Dict[str, Any] = None) -> "Agent":
+        return cls(model=model, arguments=arguments)
