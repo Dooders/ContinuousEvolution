@@ -1,3 +1,9 @@
+"""
+Mutation strategies for the continuous evolution algorithm.
+
+The mutation strategy is used to mutate the weights of the neural network.
+"""
+
 from abc import ABC, abstractmethod
 from typing import Tuple
 
@@ -51,6 +57,7 @@ class Uniform(MutationStrategy):
         Perform mutation on the weights of the neural network.
     """
 
+    @classmethod
     def mutate(
         cls, agent: "Agent", mutation_rate: float = 0.1, scale: float = 0.05
     ) -> "Agent":
@@ -92,6 +99,7 @@ class Gaussian(MutationStrategy):
         Perform mutation on the weights of the neural network.
     """
 
+    @classmethod
     def mutate(
         cls, agent: "Agent", mutation_rate: float = 0.1, scale: float = 0.05
     ) -> "Agent":
@@ -135,6 +143,7 @@ class NonUniform(MutationStrategy):
     #! Not working
     """
 
+    @classmethod
     def mutate(
         cls,
         agent: "Agent",
@@ -184,6 +193,7 @@ class Polynomial(MutationStrategy):
         Perform mutation on the weights of the neural network.
     """
 
+    @classmethod
     def mutate(
         cls, agent: "Agent", mutation_rate: float = 0.1, scale: float = 0.05
     ) -> "Agent":
@@ -225,6 +235,7 @@ class BitFlip(MutationStrategy):
         Perform mutation on the weights of the neural network.
     """
 
+    @classmethod
     def mutate(cls, agent: "Agent", mutation_rate: float = 0.1) -> "Agent":
         """
         Perform mutation on the weights of the neural network.
@@ -263,6 +274,7 @@ class Boundary(MutationStrategy):
         Perform mutation on the weights of the neural network.
     """
 
+    @classmethod
     def mutate(
         cls,
         agent: "Agent",
@@ -336,6 +348,7 @@ class AdaptiveGaussian(MutationStrategy):
             self.rate = min(self.max_rate, self.rate * 1.1)
         self.performance_tracker.append(current_performance)
 
+    @classmethod
     def mutate(
         cls, agent: "Agent", mutation_rate: float = 0.1, scale: float = 0.05
     ) -> "Agent":
@@ -377,6 +390,7 @@ class Hybrid(MutationStrategy):
         Perform mutation on the weights of the neural network.
     """
 
+    @classmethod
     def mutate(
         cls,
         agent: "Agent",
