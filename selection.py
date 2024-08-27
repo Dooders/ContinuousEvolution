@@ -1,5 +1,15 @@
+"""
+This module contains the implementation of the Selection class and its subclasses.
+
+The Selection class is an abstract class that defines the interface for selection methods.
+
+The subclasses implement different selection methods such as roulette wheel, tournament,
+rank, elitism, stochastic universal sampling, truncation, Boltzmann, softmax, and fitness scaling.
+"""
+
 import random
 from abc import ABC, abstractmethod
+from typing import List, Tuple
 
 from agent import Agent
 from population import Population
@@ -60,6 +70,7 @@ class RouletteWheel(Selection):
     wheel proportional to its fitness score.
     """
 
+    @classmethod
     def select(cls, population: "Population[Agent]", n: int) -> "Population[Agent]":
         """
         Select n agents from the population.
@@ -93,6 +104,7 @@ class Tournament(Selection):
     and then selecting the best individual from the k individuals.
     """
 
+    @classmethod
     def select(
         cls, population: "Population[Agent]", n: int, k: int
     ) -> "Population[Agent]":
@@ -129,25 +141,24 @@ class Rank(Selection):
     and then selecting individuals based on their rank.
     """
 
-    def select(cls, population: "Population[Agent]", n: int) -> "Population[Agent]":
+    @classmethod
+    def select(cls, population: List[Tuple[Agent, float]], n: int) -> List[Agent]:
         """
         Select n agents from the population.
 
         Parameters
         ----------
-        population : "Population[Agent]"
-            List of agents in the population, sorted desc by fitness.
+        population : List[Tuple[Agent, float]]
+            List of tuples containing (agent, fitness_score)
         n : int
             Number of agents to select.
 
         Returns
         -------
-        "Population[Agent]"
+        List[Agent]
             List of selected agents of length n.
         """
-        ranked_population = sorted(
-            list(zip(population, population.fitness)), key=lambda x: x[1], reverse=True
-        )
+        ranked_population = sorted(population, key=lambda x: x[1], reverse=True)
         selected = [agent for agent, _ in ranked_population[:n]]
         return selected
 
@@ -160,6 +171,7 @@ class Elitism(Selection):
     The elitism selection process involves selecting the best individuals from the population.
     """
 
+    @classmethod
     def select(cls, population: "Population[Agent]", n: int) -> "Population[Agent]":
         """
         Select n agents from the population.
@@ -191,6 +203,7 @@ class StochasticUniversalSampling(Selection):
     based on their fitness and a random starting point.
     """
 
+    @classmethod
     def select(cls, population: "Population[Agent]", n: int) -> "Population[Agent]":
         """
         Select n agents from the population.
@@ -235,6 +248,7 @@ class Truncation(Selection):
     the next generation.
     """
 
+    @classmethod
     def select(cls, population: "Population[Agent]", n: int) -> "Population[Agent]":
         """
         Select n agents from the population.
@@ -266,6 +280,7 @@ class Boltzmann(Selection):
     and a temperature parameter.
     """
 
+    @classmethod
     def select(
         cls, population: "Population[Agent]", n: int, temperature: float
     ) -> "Population[Agent]":
@@ -317,6 +332,7 @@ class Softmax(Selection):
     and a temperature parameter.
     """
 
+    @classmethod
     def select(
         cls, population: "Population[Agent]", n: int, temperature: float
     ) -> "Population[Agent]":
@@ -373,6 +389,7 @@ class FitnessScaling(Selection):
         Scaling factor for fitness scaling.
     """
 
+    @classmethod
     def select(
         cls, population: "Population[Agent]", n: int, alpha: float
     ) -> "Population[Agent]":
