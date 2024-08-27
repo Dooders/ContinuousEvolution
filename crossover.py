@@ -1,3 +1,17 @@
+"""
+This module contains the implementation of different crossover strategies for
+the genetic algorithm.
+
+Crossover strategies are used to combine the genetic material of two parents
+to create a child.
+
+The following crossover strategies are implemented:
+- Average
+- Random
+- RandomPoint
+- RandomRange
+"""
+
 from abc import ABC, abstractmethod
 
 import torch
@@ -76,7 +90,7 @@ class Average(CrossoverStrategy):
             child.parameters(), parent_x.parameters(), parent_y.parameters()
         ):
             child_param.data.copy_((param_x.data + param_y.data) / 2.0)
-        return child
+        return Agent.from_model(child, settings)
 
 
 class Random(CrossoverStrategy):
@@ -106,12 +120,12 @@ class Random(CrossoverStrategy):
         """
         settings = parent_x.arguments if settings is None else settings
         child = type(parent_x.model)(**settings)
-        for child_param, param__x, param__y in zip(
+        for child_param, param_x, param_y in zip(
             child.parameters(), parent_x.parameters(), parent_y.parameters()
         ):
-            mask = torch.rand(param__x.size()) > 0.5
-            child_param.data.copy_(torch.where(mask, param__x.data, param__y.data))
-        return child
+            mask = torch.rand(param_x.size()) > 0.5
+            child_param.data.copy_(torch.where(mask, param_x.data, param_y.data))
+        return Agent.from_model(child, settings)
 
 
 class RandomPoint(CrossoverStrategy):
@@ -162,7 +176,7 @@ class RandomPoint(CrossoverStrategy):
                     child_param.data.copy_(param__x.data)
                 else:
                     child_param.data.copy_(param_y.data)
-        return child
+        return Agent.from_model(child, settings)
 
 
 class RandomRange(CrossoverStrategy):
@@ -207,4 +221,4 @@ class RandomRange(CrossoverStrategy):
                     child_param.data.copy_(param_x.data)
                 else:
                     child_param.data.copy_(param_y.data)
-        return child
+        return Agent.from_model(child, settings)
