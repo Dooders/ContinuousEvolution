@@ -12,11 +12,16 @@ class Fitness(ABC):
     returns a Population object of the agent updated fitness scores
 
     A Fitness subclass is passed to the ContinuousEvolution object during initialization.
+
+    Methods
+    -------
+    score(population: Population[Agent], results: list) -> Population[Agent]:
+        Evaluate the fitness of the agents in the population.
     """
 
     @classmethod
     @abstractmethod
-    def evaluate(
+    def score(
         cls, population: "Population[Agent]", results: list
     ) -> "Population[Agent]":
         """
@@ -58,7 +63,7 @@ class TradingFitness(Fitness):
     So the class will need the agent's history and the results from the agent's actions.
     """
 
-    def evaluate(
+    def score(
         self, population: "Population[Agent]", results: list
     ) -> "Population[Agent]":
         pass
