@@ -1,6 +1,8 @@
 import hashlib
+from typing import Union
 
 import numpy as np
+import torch
 import torch.nn as nn
 
 
@@ -47,3 +49,21 @@ def extract_parameters(model: nn.Module) -> np.ndarray:
             parameters.append(layer.weight.data.numpy().flatten())
             parameters.append(layer.bias.data.numpy().flatten())
     return np.concatenate(parameters)
+
+
+def set_seed(seed: Union[str, int]) -> None:
+    """
+    Set the seed for the random number generators.
+
+    Parameters
+    ----------
+    seed : Union[str, int]
+        The seed to set. If a string is provided, it will be converted to a 32-bit integer hash.
+    """
+    if isinstance(seed, str):
+        # Convert string to a 32-bit integer hash
+        seed = int(hashlib.md5(seed.encode()).hexdigest(), 16) % (2**32)
+    else:
+        seed = int(seed) % (2**32)
+    torch.manual_seed(seed)
+    np.random.seed(seed)
