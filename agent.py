@@ -6,7 +6,7 @@ The Agent class is a custom PyTorch nn.Module extension representing an agent.
 It includes methods for forward pass, state retrieval, and creation from a model.
 """
 
-from typing import Any, Dict, Type, Union
+from typing import Any, Callable, Dict, List, Type, Union
 
 import torch
 from torch import nn
@@ -65,6 +65,9 @@ class Agent(nn.Module):
         self.id = model_hash(self.model)
         self.temporal_id = self.id
         self.fitness = 0
+        self.fitness_history = []
+        self.output_history = []
+        self.input_history = []
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -80,7 +83,10 @@ class Agent(nn.Module):
         torch.Tensor
             Output tensor.
         """
-        return self.model(x)
+        output = self.model(x)
+        self.output_history.append(output.item())
+        self.input_history.append(x.item())
+        return output
 
     def __str__(self) -> str:
         return f"Agent {self.id}"
@@ -93,7 +99,17 @@ class Agent(nn.Module):
             "id": self.id,
             "temporal_id": model_hash(self.model),
             "fitness": self.fitness,
+            "fitness_history": self.fitness_history,
+            "output_history": self.output_history,
+            "input_history": self.input_history,
         }
+
+    def evaluate(
+        self, fitness_function: Callable[[List[float], List[float]], float]
+    ) -> float:
+        self.fitness = fitness_function(self.output_history, self.input_history)
+        self.fitness_history.append(self.fitness)
+        return self.fitness
 
     @classmethod
     def from_model(cls, model: nn.Module, arguments: Dict[str, Any] = None) -> "Agent":
