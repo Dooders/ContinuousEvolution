@@ -1,13 +1,11 @@
 """
-This module contains the implementation of the Agent class and the AgentFactory
-class.
-
 The Agent class is a custom PyTorch nn.Module extension representing an agent.
 It includes methods for forward pass, state retrieval, and creation from a model.
 """
 
 from typing import Any, Callable, Dict, List, Type, Union
 
+import numpy as np
 import torch
 from torch import nn
 
@@ -42,6 +40,8 @@ class Agent(nn.Module):
         Forward pass through the model.
     state(self) -> Dict[str, Any]:
         Get the state of the agent.
+    evaluate(self, fitness_function: Callable[[List[float], List[float]], float], target_history: List[float]) -> float:
+        Calculate the fitness of the agent.
     from_model(cls, model: nn.Module, arguments: Dict[str, Any] = None) -> "Agent":
         Create an agent from a model.
     """
@@ -64,7 +64,6 @@ class Agent(nn.Module):
         self.arguments = arguments
         self.id = model_hash(self.model)
         self.temporal_id = self.id
-        self.fitness = 0
         self.fitness_history = []
         self.output_history = []
         self.input_history = []
@@ -85,7 +84,7 @@ class Agent(nn.Module):
         """
         output = self.model(x)
         self.output_history.append(output.item())
-        self.input_history.append(x.item())
+        self.input_history.append(x.tolist())
         return output
 
     def __str__(self) -> str:
@@ -105,11 +104,42 @@ class Agent(nn.Module):
         }
 
     def evaluate(
-        self, fitness_function: Callable[[List[float], List[float]], float]
+        self,
+        fitness_function: Callable[[List[float], List[float]], float],
+        target_history: List[float],
     ) -> float:
-        self.fitness = fitness_function(self.output_history, self.input_history)
-        self.fitness_history.append(self.fitness)
-        return self.fitness
+        """
+        Calculate the fitness of the agent.
+
+        Parameters
+        ----------
+        fitness_function : Callable[[List[float], List[float]], float]
+            Function to calculate the fitness of the agent.
+        target_history : List[float]
+            Target history to compare against.
+
+        Returns
+        -------
+        float
+            Fitness of the agent.
+        """
+        score = fitness_function(self, target_history)
+        self.fitness_history.append(score)
+        return score
+
+    @property
+    def fitness(self) -> float:
+        """
+        Calculate the fitness of the agent.
+
+        Returns
+        -------
+        float
+            Fitness of the agent. 0 if no fitness history.
+        """
+        if not self.fitness_history:
+            return 0
+        return np.mean(self.fitness_history)
 
     @classmethod
     def from_model(cls, model: nn.Module, arguments: Dict[str, Any] = None) -> "Agent":
