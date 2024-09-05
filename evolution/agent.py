@@ -96,11 +96,8 @@ class Agent(nn.Module):
     def state(self) -> Dict[str, Any]:
         return {
             "id": self.id,
-            "temporal_id": model_hash(self.model),
+            "output": self.output_history[-1],
             "fitness": self.fitness,
-            "fitness_history": self.fitness_history,
-            "output_history": self.output_history,
-            "input_history": self.input_history,
         }
 
     def evaluate(
