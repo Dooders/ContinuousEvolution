@@ -1,12 +1,11 @@
-from collections import deque, namedtuple
-from typing import Tuple
+from collections import deque
 
 import numpy as np
 import torch
 import torch.nn as nn
 
-from agent import Agent
-from fitness import Fitness
+from evolution.agent import Agent
+from evolution.fitness import Fitness
 
 
 class ContinuousEvolution:
@@ -64,29 +63,55 @@ class ContinuousEvolution:
         inputs to consider for each prediction.
     """
 
+    #! Write an "ContinuousEvolution Framework" in the docs, go through the philosophy and decisions made. multi-part series
+    #! Quick start for those that just want to start playing around with the framework
+    #! Explain the different components and how they interact with each other
+    #! have the companion article, show the future of the framework and how it can be used in different scenarios, goals I want to accomplish with it
+    #! start a patreon for anyone that wants to support the project, and give them influence on the direction of the project
+    #! have an example implementation on some stock data, show how it can be used in a real world scenario
+
+    # diff idea
+    #! create my own background service in Windows that can screenshot the screen and have a local llm agent be your assistant. Checks for file changes, reads text, understands context and expectations. And you don't have to do anything but be you. And get what you want out of it
+    #! everything is accessible to the local network, you can control your parameters (The AI genetic code). This information cannot be given or trusted any outside party to the network you trust
+    # diff idea
+
     def __init__(
         self,
-        agent_model: nn.Module,
-        criterion: nn.Module,
+        agent_type: nn.Module,
+        fitness: "Fitness",
+        # reproduction: "Reproduction",  # this will come with parent_count, crossover strategy, mutation strategy already
         settings: dict,
         population_size: int,
         parent_count: int,
         crossover_strategy,
         mutation_strategy,
     ) -> None:
-        self.model = agent_model
+        self.agent_type = agent_type
         self.settings = settings
-        self.criterion = criterion
-        self.population_size = population_size
-        self.population = self._initialize_population(population_size)
+        self.population_size = population_size  # add method to init a population, fill remaining spots with new agents, etc.
+        self.population = (
+            self._initialize_population(  # add this method to population class instead
+                population_size
+            )
+        )  #! whats a list that cant change shape?
         self.parent_count = parent_count
-        self.population_history = []
+        self.population_history = (
+            []
+        )  #! make this a bool triggered attribute that gets tracked, basically a switch inside the object to behave a certain way. Turn on and off
         self.predictions = []
-        self.fitness = Fitness(self.criterion)
+        self.fitness = fitness
         self.crossover_strategy = crossover_strategy
         self.mutation_strategy = mutation_strategy
-        self.input_buffer = deque(maxlen=200)
-        self.output_buffer = deque(maxlen=200)
+        #! make a time class that controls the flow of information, and how it gets processed, in what order, in what way, etc. that class has the buffers
+        self.input_buffer = deque(
+            maxlen=200
+        )  #! its basically a ledger of information that gets passed around, and what agents do with it
+        self.output_buffer = deque(
+            maxlen=200
+        )  #! like a window system that overlays information next to each other. Like a timeline moving left to right
+
+    #! can there also be a component that can learn from the data from a higher perspective, like a meta agent that can learn from the agents, and make decisions based on that?
+    #! like delayed cognition or evaluation. ahhh, fitness scores from different intervals and perspectives???? guardian angel lol
 
     def _initialize_population(self, size: int) -> list:
         """
@@ -102,7 +127,7 @@ class ContinuousEvolution:
         list
             List of SimpleSequentialNetwork instances.
         """
-        return [Agent(self.model, self.settings) for _ in range(size)]
+        return [Agent(self.agent_type, self.settings) for _ in range(size)]
 
     def select_parents(
         self, population: list, fitnesses: list, parent_count: int
@@ -144,7 +169,7 @@ class ContinuousEvolution:
             Child network created by crossover of the parents.
         """
         return self.crossover_strategy.crossover(
-            parent1, parent2, self.model, self.settings
+            parent1, parent2, self.agent_type, self.settings
         )
 
     def mutate(self, network: nn.Module) -> None:

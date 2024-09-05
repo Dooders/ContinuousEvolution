@@ -11,8 +11,8 @@ import random
 from abc import ABC, abstractmethod
 from typing import List, Tuple
 
-from agent import Agent
-from population import Population
+from evolution.agent import Agent
+from evolution.population import Population
 
 
 class Selection(ABC):

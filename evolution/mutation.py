@@ -9,7 +9,7 @@ from typing import Tuple
 
 import torch
 
-from agent import Agent
+from evolution.agent import Agent
 
 
 class MutationStrategy(ABC):

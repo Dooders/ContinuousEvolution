@@ -9,7 +9,7 @@ import numpy as np
 import torch
 from torch import nn
 
-from utils import model_hash
+from evolution.utils import model_hash
 
 
 class Agent(nn.Module):

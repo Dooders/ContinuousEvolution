@@ -16,7 +16,7 @@ from abc import ABC, abstractmethod
 
 import torch
 
-from agent import Agent
+from evolution.agent import Agent
 
 
 class CrossoverStrategy(ABC):
