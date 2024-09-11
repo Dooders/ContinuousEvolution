@@ -3,7 +3,7 @@ from typing import Tuple
 import torch
 import torch.nn as nn
 
-from utils import model_hash
+from evolution.utils import model_hash
 
 
 class SimpleSequentialNetwork(nn.Module):
