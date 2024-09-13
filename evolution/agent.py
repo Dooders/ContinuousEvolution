@@ -9,6 +9,7 @@ import numpy as np
 import torch
 from torch import nn
 
+from evolution.utils import experiment_logger as logger
 from evolution.utils import model_hash
 
 
@@ -96,8 +97,8 @@ class Agent(nn.Module):
     def state(self) -> Dict[str, Any]:
         return {
             "id": self.id,
-            "output": self.output_history[-1],
-            "fitness": self.fitness,
+            "output": self.output_history[-1] if self.output_history else None,
+            # ... other state properties ...
         }
 
     def evaluate(
@@ -122,6 +123,7 @@ class Agent(nn.Module):
         """
         score = fitness_function(self, target_history)
         self.fitness_history.append(score)
+        logger.info(f"Agent {self.id} fitness: {score}, output: {self.output}")
         return score
 
     @property
@@ -138,6 +140,25 @@ class Agent(nn.Module):
             return 0
         return np.mean(self.fitness_history)
 
+    @property
+    def output(self) -> float:
+        """
+        Return the last output of the agent.
+
+        Returns
+        -------
+        float
+            Last output of the agent. None if no output history.
+        """
+        if not self.output_history:
+            return None
+        return self.output_history[-1]
+
     @classmethod
     def from_model(cls, model: nn.Module, arguments: Dict[str, Any] = None) -> "Agent":
         return cls(model=model, arguments=arguments)
+
+    def update_id(self):
+        """Update the agent's ID based on its current state."""
+        self.id = model_hash(self.model)
+        self.temporal_id = self.id

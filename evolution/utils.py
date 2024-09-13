@@ -1,4 +1,7 @@
 import hashlib
+import logging
+import os
+import time
 from typing import Union
 
 import numpy as np
@@ -8,7 +11,7 @@ import torch.nn as nn
 
 def model_hash(model: nn.Module) -> str:
     """
-    Generate a hash of the model parameters.
+    Generate a unique hash for a PyTorch model.
 
     Parameters
     ----------
@@ -20,10 +23,10 @@ def model_hash(model: nn.Module) -> str:
     str
         The hash of the model parameters.
     """
-    hash_md5 = hashlib.md5()
-    extracted_parameters = extract_parameters(model)
-    hash_md5.update(extracted_parameters.tobytes())
-    return hash_md5.hexdigest()
+    param_string = "".join(
+        [str(p.data.cpu().numpy().byteswap().tobytes()) for p in model.parameters()]
+    )
+    return hashlib.md5(param_string.encode() + str(time.time()).encode()).hexdigest()
 
 
 def extract_parameters(model: nn.Module) -> np.ndarray:
@@ -67,3 +70,38 @@ def set_seed(seed: Union[str, int]) -> None:
         seed = int(seed) % (2**32)
     torch.manual_seed(seed)
     np.random.seed(seed)
+
+
+def _experiment_logger() -> logging.Logger:
+    """
+    Set up a logger that only writes to a file, not to the console.
+    Deletes the existing log file if it exists.
+
+    Returns
+    -------
+    logging.Logger
+        The configured logger.
+    """
+    log_file = "simulation.log"
+
+    # Delete the existing log file if it exists
+    if os.path.exists(log_file):
+        os.remove(log_file)
+
+    # Set up logging
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.INFO)
+    formatter = logging.Formatter("%(asctime)s - %(message)s")
+
+    # File handler
+    file_handler = logging.FileHandler(log_file)
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+
+    # Prevent the logger from propagating messages to the root logger
+    logger.propagate = False
+
+    return logger
+
+
+experiment_logger = _experiment_logger()

@@ -7,20 +7,38 @@ The subclasses implement different selection methods such as roulette wheel, tou
 rank, elitism, stochastic universal sampling, truncation, Boltzmann, softmax, and fitness scaling.
 """
 
+import functools
 import random
 from abc import ABC, abstractmethod
 from typing import List, Tuple
 
 from evolution.agent import Agent
 from evolution.population import Population
+from evolution.utils import experiment_logger as logger
 
+#! Maybe add a Selector class that takes a list of agents and returns a list of agents.
+#! It executes the selection strategy and returns the selected agents.
+
+# def log_selection(cls):
+#     """Decorator to add logging to selection classes."""
+#     original_select = cls.select
+
+#     @functools.wraps(original_select)
+#     def wrapped_select(cls, *args, **kwargs):
+#         logger.info(f"Executing {cls.__name__} selection")
+#         result = original_select(cls, *args, **kwargs)
+#         logger.info(f"{cls.__name__} selection completed")
+#         return result
+
+#     cls.select = classmethod(wrapped_select)
+#     return cls
 
 class Selection(ABC):
     """
     Abstract class for selection methods.
 
     Intended to be used as a base class to be inherited where the select method
-    returns a Population object of the selected agents.
+    returns a list of agents.
 
     A Selection subclass is passed to the ContinuousEvolution object during initialization.
 
