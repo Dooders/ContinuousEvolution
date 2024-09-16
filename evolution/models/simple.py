@@ -21,7 +21,7 @@ class SimpleSequentialNetwork(nn.Module):
     def __init__(self, input_size: int = 8) -> None:
         super(SimpleSequentialNetwork, self).__init__()
         self.net = nn.Sequential(
-            nn.Linear(input_size, 8), nn.ReLU(), nn.Linear(8, 1), nn.Sigmoid()
+            nn.Linear(input_size, 10), nn.Linear(10, 1), nn.Sigmoid()
         )
         self.id = model_hash(self)
 
