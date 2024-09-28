@@ -8,6 +8,7 @@ from typing import Any, Callable, Dict, List, Type, Union
 import numpy as np
 import torch
 from torch import nn
+import math
 
 from evolution.utils import experiment_logger as logger
 from evolution.utils import model_hash
@@ -68,6 +69,26 @@ class Agent(nn.Module):
         self.fitness_history = []
         self.output_history = []
         self.input_history = []
+
+        # Initialize weights
+        self.initialize_weights()
+
+    def initialize_weights(self):
+        """
+        Initialize the weights of the model using He initialization,
+        but with a larger scale factor to potentially produce larger outputs.
+        """
+        for module in self.model.modules():
+            if isinstance(module, (nn.Linear, nn.Conv2d)):
+                # He initialization with a larger scale factor
+                nn.init.kaiming_normal_(module.weight, mode='fan_in', nonlinearity='relu')
+                module.weight.data *= 2.0  # Increase the scale of weights
+                
+                if module.bias is not None:
+                    fan_in, _ = nn.init._calculate_fan_in_and_fan_out(module.weight)
+                    bound = 1 / math.sqrt(fan_in)
+                    nn.init.uniform_(module.bias, -bound, bound)
+                    module.bias.data *= 2.0  # Increase the scale of biases
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
