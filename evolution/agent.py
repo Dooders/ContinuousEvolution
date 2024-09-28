@@ -86,6 +86,7 @@ class Agent(nn.Module):
         output = self.model(x)
         self.output_history.append(output.item())
         self.input_history.append(x.tolist())
+        logger.info(f"Agent {self.id} output: {output}")
         return output
 
     def __str__(self) -> str:
@@ -104,7 +105,8 @@ class Agent(nn.Module):
     def evaluate(
         self,
         fitness_function: Callable[[List[float], List[float]], float],
-        target_history: List[float],
+        X: torch.Tensor,
+        # y: torch.Tensor,
     ) -> float:
         """
         Calculate the fitness of the agent.
@@ -113,17 +115,24 @@ class Agent(nn.Module):
         ----------
         fitness_function : Callable[[List[float], List[float]], float]
             Function to calculate the fitness of the agent.
-        target_history : List[float]
-            Target history to compare against.
+        X : torch.Tensor
+            Input tensor.
+        y : torch.Tensor
+            Target tensor.
 
         Returns
         -------
         float
             Fitness of the agent.
         """
-        score = fitness_function(self, target_history)
+        if self.output_history:
+            score = fitness_function(self, X)
+        else:
+            score = 0
         self.fitness_history.append(score)
-        logger.info(f"Agent {self.id} fitness: {score}, output: {self.output}")
+        logger.info(
+            f"Evaluating agent {self.id} fitness: {score}, fitness history: {self.fitness_history}"
+        )
         return score
 
     @property
