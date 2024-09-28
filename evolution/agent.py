@@ -14,6 +14,24 @@ from evolution.utils import experiment_logger as logger
 from evolution.utils import model_hash
 
 
+class ScalingLayer(nn.Module):
+    def __init__(self, scale_factor):
+        super().__init__()
+        self.scale_factor = scale_factor
+
+    def forward(self, x):
+        return x * self.scale_factor
+
+
+class LearnableScalingLayer(nn.Module):
+    def __init__(self, initial_scale=1.0):
+        super().__init__()
+        self.scale = nn.Parameter(torch.tensor(initial_scale))
+
+    def forward(self, x):
+        return x * self.scale
+
+
 class Agent(nn.Module):
     """
     Custom PyTorch nn.Module extension representing an agent.
@@ -49,7 +67,8 @@ class Agent(nn.Module):
     """
 
     def __init__(
-        self, model: Union[nn.Module, Type[nn.Module]], arguments: Dict[str, Any] = None
+        self, model: Union[nn.Module, Type[nn.Module]], arguments: Dict[str, Any] = None,
+        scaling_type: str = 'none', scaling_factor: float = 1.0
     ) -> None:
         super().__init__()
         if isinstance(model, nn.Module):
@@ -69,6 +88,14 @@ class Agent(nn.Module):
         self.fitness_history = []
         self.output_history = []
         self.input_history = []
+
+        # Add scaling layer
+        if scaling_type == 'fixed':
+            self.scaling_layer = ScalingLayer(scaling_factor)
+        elif scaling_type == 'learnable':
+            self.scaling_layer = LearnableScalingLayer(scaling_factor)
+        else:
+            self.scaling_layer = nn.Identity()
 
         # Initialize weights
         self.initialize_weights()
@@ -105,10 +132,11 @@ class Agent(nn.Module):
             Output tensor.
         """
         output = self.model(x)
-        self.output_history.append(output.item())
+        scaled_output = self.scaling_layer(output)
+        self.output_history.append(scaled_output.item())
         self.input_history.append(x.tolist())
-        logger.info(f"Agent {self.id} output: {output}")
-        return output
+        logger.info(f"Agent {self.id} output: {scaled_output}")
+        return scaled_output
 
     def __str__(self) -> str:
         return f"Agent {self.id}"
