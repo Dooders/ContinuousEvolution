@@ -3,12 +3,12 @@ The Agent class is a custom PyTorch nn.Module extension representing an agent.
 It includes methods for forward pass, state retrieval, and creation from a model.
 """
 
+import math
 from typing import Any, Callable, Dict, List, Type, Union
 
 import numpy as np
 import torch
 from torch import nn
-import math
 
 from evolution.utils import experiment_logger as logger
 from evolution.utils import model_hash
@@ -67,8 +67,11 @@ class Agent(nn.Module):
     """
 
     def __init__(
-        self, model: Union[nn.Module, Type[nn.Module]], arguments: Dict[str, Any] = None,
-        scaling_type: str = 'none', scaling_factor: float = 1.0
+        self,
+        model: Union[nn.Module, Type[nn.Module]],
+        arguments: Dict[str, Any] = None,
+        scaling_type: str = "learnable",
+        scaling_factor: float = 1.0,
     ) -> None:
         super().__init__()
         if isinstance(model, nn.Module):
@@ -90,15 +93,16 @@ class Agent(nn.Module):
         self.input_history = []
 
         # Add scaling layer
-        if scaling_type == 'fixed':
+        if scaling_type == "fixed":
             self.scaling_layer = ScalingLayer(scaling_factor)
-        elif scaling_type == 'learnable':
+        elif scaling_type == "learnable":
             self.scaling_layer = LearnableScalingLayer(scaling_factor)
         else:
             self.scaling_layer = nn.Identity()
 
         # Initialize weights
-        self.initialize_weights()
+        #! Is not working well, worse performance
+        # self.initialize_weights()
 
     def initialize_weights(self):
         """
@@ -108,9 +112,11 @@ class Agent(nn.Module):
         for module in self.model.modules():
             if isinstance(module, (nn.Linear, nn.Conv2d)):
                 # He initialization with a larger scale factor
-                nn.init.kaiming_normal_(module.weight, mode='fan_in', nonlinearity='relu')
+                nn.init.kaiming_normal_(
+                    module.weight, mode="fan_in", nonlinearity="relu"
+                )
                 module.weight.data *= 2.0  # Increase the scale of weights
-                
+
                 if module.bias is not None:
                     fan_in, _ = nn.init._calculate_fan_in_and_fan_out(module.weight)
                     bound = 1 / math.sqrt(fan_in)
