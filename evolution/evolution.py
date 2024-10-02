@@ -1,4 +1,5 @@
 from collections import deque
+from typing import List
 
 import numpy as np
 import torch
@@ -67,57 +68,22 @@ class ContinuousEvolution:
         inputs to consider for each prediction.
     """
 
-    #! Write an "ContinuousEvolution Framework" in the docs, go through the philosophy and decisions made. multi-part series
-    #! Quick start for those that just want to start playing around with the framework
-    #! Explain the different components and how they interact with each other
-    #! have the companion article, show the future of the framework and how it can be used in different scenarios, goals I want to accomplish with it
-    #! start a patreon for anyone that wants to support the project, and give them influence on the direction of the project
-    #! have an example implementation on some stock data, show how it can be used in a real world scenario
-
-    # diff idea
-    #! create my own background service in Windows that can screenshot the screen and have a local llm agent be your assistant. Checks for file changes, reads text, understands context and expectations. And you don't have to do anything but be you. And get what you want out of it
-    #! everything is accessible to the local network, you can control your parameters (The AI genetic code). This information cannot be given or trusted any outside party to the network you trust
-    # diff idea
-
-    def __init__(
-        self,
-        agent_type: nn.Module,
-        fitness: "Fitness",
-        # reproduction: "Reproduction",  # this will come with parent_count, crossover strategy, mutation strategy already
-        settings: dict,
-        population_size: int,
-        parent_count: int,
-        crossover_strategy,
-        mutation_strategy,
-    ) -> None:
-        self.agent_type = SimpleSequentialNetwork
-        self.settings = settings
-        self.population_size = population_size  # add method to init a population, fill remaining spots with new agents, etc.
-        self.population = (
-            self._initialize_population(  # add this method to population class instead
-                population_size
-            )
-        )  #! whats a list that cant change shape?
-        self.parent_count = parent_count
-        self.population_history = (
-            []
-        )  #! make this a bool triggered attribute that gets tracked, basically a switch inside the object to behave a certain way. Turn on and off
+    def __init__(self, params: dict) -> None:
+        self.agent_type = params["agent_model"]
+        self.settings = params["settings"]
+        self.population_size = params["population_size"]
+        self.population = self._initialize_population()
+        self.parent_count = params["num_parents"]
+        self.criterion = params["fitness"]
+        self.population_history = []
         self.predictions = []
-        self.fitness = fitness
-        self.crossover_strategy = Average()
-        self.mutation_strategy = Gaussian()
-        #! make a time class that controls the flow of information, and how it gets processed, in what order, in what way, etc. that class has the buffers
-        self.input_buffer = deque(
-            maxlen=200
-        )  #! its basically a ledger of information that gets passed around, and what agents do with it
-        self.output_buffer = deque(
-            maxlen=200
-        )  #! like a window system that overlays information next to each other. Like a timeline moving left to right
+        self.fitness = params["fitness"]
+        self.crossover_strategy = params["crossover_strategy"]
+        self.mutation_strategy = params["mutation_strategy"]
+        self.target_buffer = deque(maxlen=params["target_buffer_size"])
+        self.output_buffer = deque(maxlen=params["output_buffer_size"])
 
-    #! can there also be a component that can learn from the data from a higher perspective, like a meta agent that can learn from the agents, and make decisions based on that?
-    #! like delayed cognition or evaluation. ahhh, fitness scores from different intervals and perspectives???? guardian angel lol
-
-    def _initialize_population(self, size: int) -> list:
+    def _initialize_population(self) -> list:
         """
         Initialize a population of neural networks.
 
@@ -131,7 +97,35 @@ class ContinuousEvolution:
         list
             List of SimpleSequentialNetwork instances.
         """
-        return [Agent(self.agent_type, self.settings) for _ in range(size)]
+        return [
+            Agent(self.agent_type, self.settings) for _ in range(self.population_size)
+        ]
+
+    def evaluate_agents(
+        self, population: List[torch.Module], price_history: List[float]
+    ) -> list[float]:
+        """
+        Evaluate the fitness of the agents.
+
+        If the price went down, the agent is rewarded for the output being close to 1.
+        If the price went up, the agent is rewarded for the output being close to 0.
+
+        Parameters
+        ----------
+        outputs : list[float]
+            The outputs of the agents.
+        price_went_down : bool
+            Whether the price went down.
+
+        Returns
+        -------
+        list[float]
+            The fitness of the agents.
+        """
+        scores = []
+        for agent in population:
+            scores.append(agent.evaluate(self.criterion, price_history))
+        return scores
 
     def select_parents(
         self, population: list, fitnesses: list, parent_count: int
@@ -178,7 +172,7 @@ class ContinuousEvolution:
 
     def mutate(self, agent: Agent) -> None:
         """Mutate the given agent."""
-        self.mutation_strategy.mutate(agent.model)
+        self.mutation_strategy.mutate(agent.model, 9.9)
         agent.update_id()  # Update the ID after mutation
 
     def run(
@@ -202,8 +196,8 @@ class ContinuousEvolution:
             Predicted output tensor from the best model in the population.
         """
 
-        self.input_buffer.append(X)
-        sequence_list = list(self.input_buffer)[-sequence_length:]
+        self.target_buffer.append(X)
+        sequence_list = list(self.target_buffer)[-sequence_length:]
         input_sequence = torch.tensor(sequence_list, dtype=torch.float32).unsqueeze(
             -1
         )  # Add feature dimension
@@ -213,8 +207,8 @@ class ContinuousEvolution:
         # This is a delayed feedback loop from previous predictions
         if len(self.output_buffer) > 1:
             past_outputs = self.output_buffer[-1]
-            actual_target = self.input_buffer[-1]
-            past_actual_target = self.input_buffer[-2]
+            actual_target = self.target_buffer[-1]
+            past_actual_target = self.target_buffer[-2]
             fitnesses = self.fitness.evaluate(
                 past_outputs, actual_target, past_actual_target
             )
